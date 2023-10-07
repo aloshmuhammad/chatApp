@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import instance from '../Axios/axios';
 import { useDispatch } from 'react-redux';
 import { setUser, setToken } from '../Redux/userSlice';
+import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../context/UserContext';
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+ const{setUsername:setLoggedInUsername,setId}= useContext(UserContext)
   const [isLoginOrRegister, setIsLoginOrRegister] = useState('register');
   const [error, setError] = useState('');
   const dispatch = useDispatch();
+  const navigate=useNavigate()
 
   const clearError = () => {
     setError('');
@@ -21,9 +25,13 @@ const Register = () => {
       .post(url, { username, password },{ withCredentials: true })
       .then((response) => {
         const { data } = response;
-        const user = data?.newUser;
+        const user = data?.newUser || data?.validUser;
         dispatch(setUser(user));
         dispatch(setToken(data?.token));
+        setLoggedInUsername(username)
+        setId(data?.newUser._id || data?.validUser._id)
+        navigate('/chat')
+        
       })
       .catch((err) => {
         const { response } = err;

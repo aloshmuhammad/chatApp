@@ -2,6 +2,7 @@ import User from "../Schemas/userSchema.js"
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import Message from "../Schemas/messageSchema.js"
 dotenv.config()
 const registerUser=async(data)=>{
 return new Promise(async(resolve,reject)=>{
@@ -35,7 +36,7 @@ const validateLogin=async(data)=>{
             if (validUser) {
               bcrypt.compare(data.password, validUser.password).then((status) => {
                 if (status) {
-                    const token=jwt.sign({userId:newUser._id},process.env.JWT_SECRET)
+                    const token=jwt.sign({userId:validUser._id},process.env.JWT_SECRET)
                     console.log(token,'tkn')
                   resolve({ message: "User Loggedin Successfully",validUser,token });
                 } else {
@@ -60,4 +61,25 @@ const getUserDetails=async(userId)=>{
     return user
 }
 
-export {registerUser,validateLogin,getUserDetails}
+const getMessage=async(userId,token)=>{
+    return new Promise(async(resolve,reject)=>{
+        try{
+            console.log(userId,'do')
+           
+           
+            const userData = jwt.verify(token, process.env.JWT_SECRET);
+            console.log(userData)
+            const CurrentuserId  = userData.userId;
+            const messages=await Message.find({
+                sender:{$in:[userId,CurrentuserId]},
+                recipient:{$in:[userId,CurrentuserId]},
+
+            }).sort({createdAt:-1})
+            console.log(messages,'mdg')
+            
+        }catch (error) {
+            throw new Error("Error occured during fetching the messages");
+          }
+    })
+}
+export {registerUser,validateLogin,getUserDetails,getMessage}
