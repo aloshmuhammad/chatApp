@@ -54,5 +54,10 @@ const validateLogin=async(data)=>{
           }
     })
 }
+const getUserDetails=async(userId)=>{
+    const user=await User.findById(userId)
+    console.log(user,'usr')
+    return user
+}
 
-export {registerUser,validateLogin}
+export {registerUser,validateLogin,getUserDetails}

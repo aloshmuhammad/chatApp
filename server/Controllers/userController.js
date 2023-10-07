@@ -7,7 +7,7 @@ const userRegister=async(req,res)=>{
 
         registerUser(data).then((response)=>{
             console.log(response,'ok')
-            res.cookie('token',response.token).status(201).json(response)
+            res.cookie('token',response.token,).status(201).json(response)
            
         }) .catch((error) => {
            

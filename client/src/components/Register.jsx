@@ -18,7 +18,7 @@ const Register = () => {
     event.preventDefault();
     const url = isLoginOrRegister === 'register' ? '/user/register' : '/user/login';
     instance
-      .post(url, { username, password })
+      .post(url, { username, password },{ withCredentials: true })
       .then((response) => {
         const { data } = response;
         const user = data?.newUser;
