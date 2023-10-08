@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { setUser, setToken } from '../Redux/userSlice';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
+import { cloneWith } from 'lodash';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -25,11 +26,13 @@ const Register = () => {
       .post(url, { username, password },{ withCredentials: true })
       .then((response) => {
         const { data } = response;
+        
         const user = data?.newUser || data?.validUser;
+        
         dispatch(setUser(user));
         dispatch(setToken(data?.token));
         setLoggedInUsername(username)
-        setId(data?.newUser._id || data?.validUser._id)
+        setId(user._id)
         navigate('/chat')
         
       })

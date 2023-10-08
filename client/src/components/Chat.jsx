@@ -3,6 +3,8 @@ import { UserContext } from '../context/UserContext'
 import Logo from './Logo'
 import { useSelector } from 'react-redux'
 import instance from '../Axios/axios'
+import { useNavigate } from 'react-router-dom'
+
 
 const Chat = () => {
     const [ws,setWs]=useState(null)
@@ -10,9 +12,11 @@ const Chat = () => {
     const [selecedtUser,setSelectedUser]=useState(null)
     const [newMessage ,setNewMessage]=useState('')
     const [messages,setMessages]=useState([])
+    const [offlinePeople,setOfflinepeople]=useState({})
     const userDetail=useSelector((state)=>state.userSlice.user)
     const { username, id } = useContext(UserContext);
     const messagesBoxref=useRef()
+    const navigate=useNavigate()
    
     useEffect(()=>{
   connectoToWs()
@@ -29,13 +33,13 @@ const Chat = () => {
     })
 }
     const showOnline=(peopleArray)=>{
-        console.log(peopleArray,'pple')
+       
         const people={}
         peopleArray.forEach(({userId,username})=> {
             people[userId]=username
         
         });
-        console.log(people,'pl')
+      
         setOnlinePeople(people)
        
     }
@@ -47,22 +51,39 @@ const Chat = () => {
         text:newMessage,
     }))
     setNewMessage('')
-    setMessages(prev=>([...prev,{text:newMessage,sender:id,recipient:selecedtUser,id:Date.now()}]))
+    setMessages(prev=>([...prev,{text:newMessage,sender:id,recipient:selecedtUser,_id:Date.now()}]))
    
     }
    useEffect(()=>{
     if(selecedtUser){
         instance.get('user/messages/'+selecedtUser,{withCredentials:true}).then((response)=>{
-
+        
+         setMessages(response.data)
+         
         })
     }
    },[selecedtUser])
+   useEffect(()=>{
+
+    instance.get('/user/people').then((response)=>{
+     
+     
+     const offlinePeopleArr=response.data.filter(p=>p._id !== id).filter(p=>!Object.keys(onlinePeople).includes(p._id))
+  
+     const offlinePeople={}
+     offlinePeopleArr.forEach(p=>{
+        offlinePeople[p._id]=p.username
+     })
+     
+     setOfflinepeople(offlinePeople)
+    })
+   },[onlinePeople])
 
   
     const handleMessage=(event)=>{
         
         const messageData=JSON.parse(event.data)
-        console.log(messageData,'msg')
+      
         if('online'in messageData){
             showOnline(messageData.online)
         }else if('text' in messageData) {
@@ -74,17 +95,28 @@ const Chat = () => {
         }
     }
 const OnlineUserExcludingMe={...onlinePeople}
-console.log(OnlineUserExcludingMe,'odssdf')
+
  delete OnlineUserExcludingMe[id]
-console.log(messages,'mesg')
- const uniqueMessages = Array.from(new Set(messages.map(message => message.id))).map(id => {
-    return messages.find(message => message.id === id);
+
+ const uniqueMessages = Array.from(new Set(messages.map(message => message._id))).map(_id => {
+    return messages.find(message => message._id === _id);
   });
+  const handleLogout=()=>{
+    localStorage.clear()
+    navigate('/')
+  }
    
   return (
     <div className='flex h-screen'>
+       
       <div className="bg-white w-1/3 ">
-        <Logo/>
+      <div className='flex items-center justify-between py-2 px-4 bg-gray-200'>
+                    <button className='bg-red-500 text-white px-4 py-2 rounded' onClick={handleLogout}>
+                        Logout
+                    </button>
+                    <Logo />
+                    <h3 className='text-2xl font-bold'>Welcome {username}</h3>
+                </div>
   
         {Object.keys(OnlineUserExcludingMe).map(userId=>(
             <div key={userId} onClick={()=>setSelectedUser(userId)} className={'border-b border-gray-100 flex items-center gap-2 cursor-pointer ' +(userId===selecedtUser ? 'bg-blue-50' :'')}>
@@ -92,8 +124,25 @@ console.log(messages,'mesg')
               <div className='w-1 bg-blue-500 h-12 rounded-r-md'> </div>
                 ) }
                 <div className='flex gap-2 py-2 pl-4 items-center'> 
-                <div className='w-8 h-8 bg-red-200 rounded-full flex items-center  '> </div>
+                <div className='w-8 h-8 relative bg-red-200 rounded-full flex items-center  '> </div>
+                <div className='absolute w-2 h-2 bg-green-400 rounded-full' > </div>
                 <span className='text-gray-800'>{onlinePeople[userId]}</span> </div>
+                
+                </div>
+               
+        ))}
+
+        <p>Offline People</p>
+
+{Object.keys(offlinePeople).map(userId=>(
+            <div key={userId} onClick={()=>setSelectedUser(userId)} className={'border-b border-gray-100 flex items-center gap-2 cursor-pointer ' +(userId===selecedtUser ? 'bg-blue-50' :'')}>
+                {userId===selecedtUser && (
+              <div className='w-1 bg-blue-500 h-12 rounded-r-md'> </div>
+                ) }
+                <div className='flex gap-2 py-2 pl-4 items-center'> 
+                <div className='w-8 h-8 relative bg-red-200 rounded-full flex items-center  '> </div>
+                <div className='absolute w-2 h-2 rounded-full' > </div>
+                <span className='text-gray-800'>{offlinePeople[userId]}</span> </div>
                 
                 </div>
                
@@ -116,13 +165,12 @@ console.log(messages,'mesg')
                     <div   className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
                     {uniqueMessages.map(message=>(
                         
-                       <div className={(message.sender==id?'text-right':'text-left')}> 
+                       <div key={message._id} className={(message.sender==id?'text-right':'text-left')}> 
 
                        
 <div className={'text-left inline-block p-2 m-2 rounded-sm text-sm ' + (message.sender === id ? 'bg-blue-700 text-white' : 'bg-white-500 text-gray-500')}>
 
-                   sender{message.sender}<br/>
-                   my id:{id}<br/>
+                 
                    {message.text}
                    </div>
                    </div>

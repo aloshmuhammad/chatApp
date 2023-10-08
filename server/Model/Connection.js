@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
 const connection = async () => {
   await mongoose
-    .connect(
-      "mongodb+srv://aloshkm:aloshy@cluster0.6cpwhx1.mongodb.net/Chat"
-    )
+    .connect(process.env.MONGO_URL)
 
     .then(() => console.log("MongoDB connected..."))
     .catch((err) => console.log(err));
